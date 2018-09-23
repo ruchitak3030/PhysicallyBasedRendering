@@ -1,6 +1,7 @@
 #include "Game.h"
 #include "Vertex.h"
 #include "WICTextureLoader.h"
+#include "DDSTextureLoader.h"
 
 // For the DirectX Math library
 using namespace DirectX;
@@ -26,6 +27,8 @@ Game::Game(HINSTANCE hInstance)
 	// Initialize fields
 	vertexShader = 0;
 	pixelShader = 0;
+	skyBoxVertexShader = 0;
+	skyBoxPixelShader = 0;
 
 	
 
@@ -54,18 +57,31 @@ Game::~Game()
 	// will clean up their own internal DirectX stuff
 	delete vertexShader;
 	delete pixelShader;
+	delete skyBoxVertexShader;
+	delete skyBoxPixelShader;
 
 	delete sphereMesh;
+	delete skyMesh;
+
 	delete sphereMaterial;
+	
+	delete sky;
 	delete sphere1;
 	delete sphere2;
 	delete sphere3;
 	delete sphere4;
 	delete sphere5;
+	
 
 	sampler->Release();
 	sphereTextureSRV->Release();
 	sphereNormalMapSRV->Release();
+	skyTextureSRV->Release();
+
+	skyRasterizerState->Release();
+	skyDepthState->Release();
+
+
 }
 
 // --------------------------------------------------------
@@ -79,9 +95,10 @@ void Game::Init()
 	//  - You'll be expanding and/or replacing these later
 	LoadShaders();
 	CreateMatrices();
+	LoadSkyBox();
 	LoadMesh();
 	LoadTextures();
-	CreateMaterials();
+	CreateMaterials();	
 	CreateBasicGeometry();
 
 	// Tell the input assembler stage of the pipeline what kind of
@@ -106,6 +123,14 @@ void Game::LoadShaders()
 	if(!pixelShader->LoadShaderFile(L"Debug/PixelShader.cso"))	
 		pixelShader->LoadShaderFile(L"PixelShader.cso");
 
+	skyBoxVertexShader = new SimpleVertexShader(device, context);
+	if (!skyBoxVertexShader->LoadShaderFile(L"Debug/SkyBoxVertexShader.cso"))
+		skyBoxVertexShader->LoadShaderFile(L"SkyBoxVertexShader.cso");
+
+	skyBoxPixelShader = new SimplePixelShader(device, context);
+	if (!skyBoxPixelShader->LoadShaderFile(L"Debug/SkyBoxPixelShader.cso"))
+		skyBoxPixelShader->LoadShaderFile(L"SkyBoxPixelShader.cso");
+
 	
 }
 
@@ -124,10 +149,28 @@ void Game::CreateMatrices()
 
 
 }
+void Game::LoadSkyBox()
+{
+	HRESULT m = CreateDDSTextureFromFile(device, L"Debug/Textures/Stormy.dds", 0, &skyTextureSRV);
+
+	//Sky Box Setup
+	D3D11_RASTERIZER_DESC rasterizerDesc = {};
+	rasterizerDesc.FillMode = D3D11_FILL_SOLID;
+	rasterizerDesc.CullMode = D3D11_CULL_FRONT;
+	rasterizerDesc.DepthClipEnable = true;
+	device->CreateRasterizerState(&rasterizerDesc, &skyRasterizerState);
+
+	D3D11_DEPTH_STENCIL_DESC depthStencilDesc = {};
+	depthStencilDesc.DepthEnable = true;
+	depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+	depthStencilDesc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
+	device->CreateDepthStencilState(&depthStencilDesc, &skyDepthState);
+}
 
 void Game::LoadMesh()
 {
 	sphereMesh = new Mesh("Debug/Models/sphere.obj", device);
+	skyMesh = new Mesh("Debug/Models/cube.obj", device);
 }
 
 void Game::LoadTextures()
@@ -150,6 +193,7 @@ void Game::CreateMaterials()
 
 
 	sphereMaterial = new Material(vertexShader, pixelShader, sphereTextureSRV, sphereNormalMapSRV, sampler);
+
 }
 
 
@@ -158,6 +202,11 @@ void Game::CreateMaterials()
 // --------------------------------------------------------
 void Game::CreateBasicGeometry()
 {
+	sky = new GameEntity(skyMesh, sphereMaterial);
+	sky->SetScale(1.0f, 1.0f, 1.0f);
+	sky->SetPosition(0.0f, 0.0f, 0.0f);
+
+
 	sphere1 = new GameEntity(sphereMesh, sphereMaterial);
 	sphere1->SetScale(2.0f, 2.0f, 2.0f);
 	sphere1->SetPosition(6.0f, -2.0f, 0.0f);
@@ -179,6 +228,8 @@ void Game::CreateBasicGeometry()
 	sphere5->SetPosition(-6.0f, -2.0f, 0.0f);
 
 }
+
+
 
 
 // --------------------------------------------------------
@@ -233,6 +284,39 @@ void Game::Draw(float deltaTime, float totalTime)
 		0);
 	UINT stride = sizeof(Vertex);
 	UINT offset = 0;
+
+	/******************************************************************************************** /
+	/*DRAW SKYBOX*/
+	/*******************************************************************************************/
+
+	context->HSSetShader(0, 0, 0);
+	context->DSSetShader(0, 0, 0);
+
+	vertexBuffer = sky->GetMesh()->GetVertexBuffer();
+	indexBuffer = sky->GetMesh()->GetIndexBuffer();
+
+	context->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);
+	context->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);
+
+	skyBoxVertexShader->SetMatrix4x4("view", camera->GetView());
+	skyBoxVertexShader->SetMatrix4x4("projection", camera->GetProjection());
+	skyBoxVertexShader->CopyAllBufferData();
+	skyBoxVertexShader->SetShader();
+
+
+	skyBoxPixelShader->SetShaderResourceView("Sky", skyTextureSRV);
+	skyBoxPixelShader->CopyAllBufferData();
+	skyBoxPixelShader->SetShader();
+
+
+	context->RSSetState(skyRasterizerState);
+	context->OMSetDepthStencilState(skyDepthState, 0);
+
+	context->DrawIndexed(sky->GetMesh()->GetIndexCount(), 0, 0);
+
+	context->RSSetState(0);
+	context->OMSetDepthStencilState(0, 0);
+
 
 	// Send data to shader variables.
 
@@ -344,7 +428,6 @@ void Game::Draw(float deltaTime, float totalTime)
 	context->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);
 
 	context->DrawIndexed(sphere5->GetMesh()->GetIndexCount(), 0, 0);
-
 
 	// Present the back buffer to the user
 	//  - Puts the final frame we're drawing into the window so the user can see it

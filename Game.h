@@ -36,10 +36,11 @@ private:
 	// Initialization helper methods - feel free to customize, combine, etc.
 	void LoadShaders(); 
 	void CreateMatrices();
+	void LoadSkyBox();
 	void LoadMesh();
 	void LoadTextures();
 	void CreateMaterials();
-	void CreateBasicGeometry();
+	void CreateBasicGeometry();	
 
 	ID3D11Buffer* vertexBuffer;
 	ID3D11Buffer* indexBuffer;
@@ -47,11 +48,20 @@ private:
 	// Wrappers for DirectX shaders to provide simplified functionality
 	SimpleVertexShader* vertexShader;
 	SimplePixelShader* pixelShader;
+	SimpleVertexShader* skyBoxVertexShader;
+	SimplePixelShader* skyBoxPixelShader;
+
+	//Rasterizer and Depth Stuff
+
+	ID3D11RasterizerState* skyRasterizerState;
+	ID3D11DepthStencilState* skyDepthState;
 
 	//Mesh
 	Mesh* sphereMesh;
+	Mesh* skyMesh;
 
 	//GameEntities
+	GameEntity* sky;
 	GameEntity* sphere1;
 	GameEntity* sphere2;
 	GameEntity* sphere3;
@@ -64,6 +74,7 @@ private:
 	//Textures
 	ID3D11ShaderResourceView* sphereTextureSRV;
 	ID3D11ShaderResourceView* sphereNormalMapSRV;
+	ID3D11ShaderResourceView* skyTextureSRV;
 	ID3D11SamplerState* sampler;
 
 	//Materials
