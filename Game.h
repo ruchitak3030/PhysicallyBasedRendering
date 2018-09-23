@@ -2,7 +2,14 @@
 
 #include "DXCore.h"
 #include "SimpleShader.h"
+#include "Mesh.h"
+#include "GameEntity.h"
+#include "Camera.h"
+#include "Material.h"
 #include <DirectXMath.h>
+
+
+using namespace DirectX;
 
 class Game 
 	: public DXCore
@@ -29,9 +36,11 @@ private:
 	// Initialization helper methods - feel free to customize, combine, etc.
 	void LoadShaders(); 
 	void CreateMatrices();
+	void LoadMesh();
+	void LoadTextures();
+	void CreateMaterials();
 	void CreateBasicGeometry();
 
-	// Buffers to hold actual geometry data
 	ID3D11Buffer* vertexBuffer;
 	ID3D11Buffer* indexBuffer;
 
@@ -39,10 +48,27 @@ private:
 	SimpleVertexShader* vertexShader;
 	SimplePixelShader* pixelShader;
 
-	// The matrices to go from model space to screen space
-	DirectX::XMFLOAT4X4 worldMatrix;
-	DirectX::XMFLOAT4X4 viewMatrix;
-	DirectX::XMFLOAT4X4 projectionMatrix;
+	//Mesh
+	Mesh* sphereMesh;
+
+	//GameEntities
+	GameEntity* sphere1;
+	GameEntity* sphere2;
+	GameEntity* sphere3;
+	GameEntity* sphere4;
+	GameEntity* sphere5;
+
+	//Camera
+	Camera* camera;
+
+	//Textures
+	ID3D11ShaderResourceView* sphereTextureSRV;
+	ID3D11ShaderResourceView* sphereNormalMapSRV;
+	ID3D11SamplerState* sampler;
+
+	//Materials
+	Material* sphereMaterial;
+
 
 	// Keeps track of the old mouse position.  Useful for 
 	// determining how far the mouse moved in a single frame.
