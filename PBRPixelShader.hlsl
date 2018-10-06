@@ -1,4 +1,15 @@
-static const float PI = 3.14159265359;
+cbuffer externalData	: register(b0)
+{
+	float3 albedo;
+	float metallic;
+	float roughness;
+	float a0;
+
+	float3 lightPos;
+	float3 lightColor;
+
+	float3 cameraPos;
+}
 
 struct VertexToPixel
 {
@@ -10,114 +21,127 @@ struct VertexToPixel
 };
 
 //Normal Distribution Function = approximates the surface's microfacets that are aligned the halfway vector influenced by the surface roughness.
-float NDFGGXTR(float3 normal, float3 halfway, float alpha)
+float DistributionGGX(float3 N, float3 H, float roughness)
 {
-	float alpha2 = alpha * alpha;
-	float NdotH = max(dot(normal, halfway), 0.0f);
-	float denominator = PI * (pow(pow(NdotH, 2) * (alpha2 - 1) + 1, 2);
+	float a = roughness*roughness;
+	float a2 = a*a;
+	float NdotH = max(dot(N, H), 0.0);
+	float NdotH2 = NdotH * NdotH;
 
-	float numerator = alpha2;
-	return numerator / denominator;
+	float num = a2;
+	float denom = (NdotH2 * (d1 - 1.0f) + 1.0f);
+	denom = PI * denom * denom;
+
+	return num / denom;
 }
 
 //Geometry function = approximates the relativesurface areawhere its micro surface details overshadow each othercausing lights to be occluded
-float GSchlickGGX(float NdotV, float k)
+float GeometrySchlickGGX(float NdotV, float roughness)
 {
-	float numerator = NdotV;
-	float denominator = NdotV * (1.0 - k) + k;
+	float r = (roughness + 1.0f);
+	float k = (r*r) / 8.0f; 
 
-	return numerator / denominator;
+	float num = NdotV;
+	float denom = NdotV * (1.0 - k) + k;
+
+	return num / denom;
 }
 
 //Smith's method takes into account both the view direction and light direction
-float GSmith(float3 normal, float3 view, float3 lightDir, float k)
+float GeometrySmith(float3 N, float3 V, float3 L, float roughness)
 {
-	float NdotV = max(dot(normal, view), 0.0f);
-	float NdotL = max(dot(normal, lighDir), 0.0f);
-	float ggx1 = GSchlickGGX(NdotV, k);
-	float ggx2 = GSchlickGGX(NdotL, k);
+	float NdotV = max(dot(N, V), 0.0f);
+	float NdotL = max(dot(N, L), 0.0f);
+	float ggx1 = GeometrySchlickGGX(NdotV, roughness);
+	float ggx2 = GeometrySchlickGGX(NdotL, roughness);
 
 	return ggx1 * ggx2;
 }
 
 //Fresnel Equation = calculates the ratio of light getting reflected over light getting refracted
-float3 FSchlick(float cosTheta, float3 F0)
+float3 FresnelSchlick(float cosTheta, float3 F0)
 {
 	return F0 + (1.0 - F0) * pow((1 - cosTheta), 5.0);
 }
-float4 main() : SV_TARGET
+
+//void CalculateRadiance(VertexToPixel input, float3 viewDir, float3 normal, float3 lightPos, float3 lightColor, float3 F0, out float3 radiance)
+//{
+//	static const float PI = 3.14159265359;
+//
+//	//Light Radiance
+//	float3 L = normalize(lightPos - input.worldPos);
+//	float3 H = normalize(viewDir + L);
+//	float dist = length(lightPos - input.worldPos);
+//	float attenuation = 1.0f / (distance * distance);
+//	float3 radiance = lightColor * attenuation;
+//
+//	//BRDF Calculation
+//	float D = NDFGGXTR(normal, H, alpha);
+//	float G = GSmith(normal, viewDir, lightDir, alpha);
+//	float F = FSchlick(max(dot(h, viewDir)0.0f), F0);
+//
+//	float3 Ks = F;
+//	float3 Kd = float3(1.0f, 1.0f, 1.0f) - Ks;
+//	Kd *= 1.0 - metallic;
+//
+//	float3 numerator = D * G * F;
+//	float denominator = 4 * max(dot(normal, viewDir), 0.0f) * max(dot(normal, lightDir), 0.0f);
+//	float3 specular = numerator / denominator;
+//
+//	float NdotL = max(dot(normal, lightDir), 0.0f);
+//	radiance = ((Kd * albedo / PI) + specular) * Li * NDotL;
+//}
+
+float4 main(VertexToPixel input) : SV_TARGET
 {
-	//Reflectance Equation
-	//1) Calculate radiance
-	//2) Calculate cosTheta
-	//3) Calculate Cook- Tolerance BRDF
+	const float PI = 3.14159235359;
+
+	float3 N = normalize(input.normal);
+	float3 V = normalize(camPos - input.worldPos);
+
+	float3 F0 = float3(0.04);
+	F0 = lerp(F0, albedo, metallic);
+
+	//Reflectance equation
+	float3 L0 = float3(0.0f, 0.0f, 0.0f);
+
+	//Calculate per-light radiance
+	float3 L = normalize(lightPos - input.worldPos);
+	float3 H = normalize(V + L);
+
+	float distance = length(lightPos - input.worldPos);
+	float attenuation = 1.0f / (distance * distance);
+	float3 radiance = lightColor * attenuation;
+
+	//Cook-Torrance BRDF
+	float NDF = DistributionGGX(N, H, roughness);
+	float G = GeometrySmith(N, V, L, roughness);
+	float3 F = FresnelSchlick(max(dot(H, V), 0.0f), F0);
 
 
-
-	//1) Calculate Radiance (Li)
-	////1)Light Direction
-	
-
-
-	//2) calculate cosTheta 
-	//Dot Product of Light Dir and surface normal
+	float3 numerator = NDF * G * F;
+	float denominator = 4.0f * max(dot(N, V), 0.0f) * max(dot(N, L), 0.0f);
+	float3 specular = numerator / max(denominator, 0.001f);
 
 
-	//3) Calculate Cook - Tolerance BRDF (fr)
-	// fr = kd * flambart + ks * fcook_lambart
-	
-	
-	
-	// kd = ratio of light that gets refracted
+	//Energy of light that gets reflected
+	float3 kS = F;
 
+	//Energy of light that gets refracted
+	float3 kD = float3(1.0f, 1.0f, 1.0f) - kS;
 
-	//flambart = c/PI
-	//c = surface color
-	//divide by PI to normalize
+	kD *= 1.0f - metallic;
 
+	//Each light's outgoing reflectance value
+	float NdotL = max(dot(N, L), 0.0f);
+	L0 += ((kD * albedo) / (PI + specular)) * radiance * NdotL;
 
-	// ks = ratio of light that gets refracted
+	//final direct lighting result
+	float3 ambient = float3(0.03f, 0.03f, 0.03f) * albedo * a0;
+	float3 color = ambient + L0;
 
+	color = color / (color + float3(1.0f, 1.0f, 1.0f));
+	color = pow(color, float3(1.0f, 2.2f));
 
-
-	//fcook_tolerance = DFG/4*(normal*Wo)*(surface normal * Wi)
-	//wo = view direction
-	//wi = light direction
-	//D = Distribution Function
-	//F = Fresnel Equation
-	//G = Geometry Function	
-
-
-
-
-	//D == approximates the relative surface area of microfacets to halfway vector(h)
-	//Trowbridge-Reitz GGX
-	//h = halfway vector
-	//n = surface normal
-	//alpha = surface roughness
-
-
-
-
-
-	//G == approximates the relativesurface areawhere its micro surface details overshadow each othercausing lights to be occluded
-	//Commbination of GGX and Schlick-GGX
-	//k = based on direct or IBL
-	//n = surface normal
-	//v = view direction
-	//Smith = uses Schlick-GGX for both view and light direction
-
-
-
-
-
-	//F = describes the ratio of light getting reflected over light getting refracted
-	//FSchlick to approximate the fresnel (for dielectrics/non-metals)
-	//Fo = base reflectivity (indices of refraction/IOR)
-
-
-
-
-
-	return float4(1.0f, 1.0f, 1.0f, 1.0f);
+	return float4(color, 1.0f);
 }
