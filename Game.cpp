@@ -318,7 +318,10 @@ void Game::Draw(float deltaTime, float totalTime)
 			pbrPixelShader->SetFloat("roughness", r);
 			pbrPixelShader->SetFloat("a0", 1.0f);
 
-			pbrPixelShader->SetFloat3("lightPos", XMFLOAT3(0, 0, -10.0f));
+			pbrPixelShader->SetFloat3("lightPosition1", XMFLOAT3(10.0f, 10.0f, -10.0f));
+			pbrPixelShader->SetFloat3("lightPosition2", XMFLOAT3(10.0f, -10.0f, -10.0f));
+			pbrPixelShader->SetFloat3("lightPosition3", XMFLOAT3(-10.0f, 10.0f, -10.0f));
+			pbrPixelShader->SetFloat3("lightPosition4", XMFLOAT3(-10.0f, -10.0f, -10.0f));
 			pbrPixelShader->SetFloat3("lightColor", XMFLOAT3(300.0f, 300.0f, 300.0f));
 
 			pbrPixelShader->SetFloat3("cameraPos", camera->GetPosition());

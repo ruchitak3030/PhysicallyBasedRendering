@@ -6,7 +6,10 @@ cbuffer externalData	: register(b0)
 	float roughness;
 	float ao;
 
-	float3 lightPos;
+	float3 lightPosition1;
+	float3 lightPosition2;
+	float3 lightPosition3;
+	float3 lightPosition4;
 	float3 lightColor;
 
 	float3 cameraPos;
@@ -66,25 +69,15 @@ float3 FresnelSchlick(float cosTheta, float3 F0)
 	return F0 + (1.0 - F0) * pow((1 - cosTheta), 5.0);
 }
 
-float4 main(VertexToPixel input) : SV_TARGET
+void CalculateRadiance(VertexToPixel input, float3 V, float3 N, float3 lightPos, float3 lightCol, float3 F0, out float3 radiance)
 {
-
-	float3 N = normalize(input.normal);
-	float3 V = normalize(cameraPos - input.worldPos);
-
-	float3 F0 = float3(0.04f, 0.04f, 0.04f);
-	F0 = lerp(F0, albedo, metallic);
-
-	//Reflectance equation
-	float3 L0 = float3(0.0f, 0.0f, 0.0f);
-
 	//Calculate per-light radiance
 	float3 L = normalize(lightPos - input.worldPos);
 	float3 H = normalize(V + L);
 
 	float distance = length(lightPos - input.worldPos);
 	float attenuation = 1.0f / (distance * distance);
-	float3 radiance = lightColor * attenuation;
+	float3 rad = lightColor * attenuation;
 
 	//Cook-Torrance BRDF
 	float NDF = DistributionGGX(N, H, roughness);
@@ -105,7 +98,33 @@ float4 main(VertexToPixel input) : SV_TARGET
 
 	//Each light's outgoing reflectance value
 	float NdotL = max(dot(N, L), 0.0f);
-	L0 += (((kD * albedo / PI) + specular) * radiance * NdotL);
+	radiance = (((kD * albedo / PI) + specular) * rad * NdotL);
+}
+
+float4 main(VertexToPixel input) : SV_TARGET
+{
+
+	float3 N = normalize(input.normal);
+	float3 V = normalize(cameraPos - input.worldPos);
+
+	float3 F0 = float3(0.04f, 0.04f, 0.04f);
+	F0 = lerp(F0, albedo, metallic);
+
+	//Reflectance equation
+	float3 L0 = float3(0.0f, 0.0f, 0.0f);
+	float3 radiance = float3(0.0f, 0.0f, 0.0f);
+
+	CalculateRadiance(input, V, N, lightPosition1, lightColor, F0, radiance);
+	L0 += radiance;
+	
+	CalculateRadiance(input, V, N, lightPosition2, lightColor, F0, radiance);
+	L0 += radiance;
+
+	CalculateRadiance(input, V, N, lightPosition3, lightColor, F0, radiance);
+	L0 += radiance;
+
+	CalculateRadiance(input, V, N, lightPosition4, lightColor, F0, radiance);
+	L0 += radiance;
 
 	//final direct lighting result
 	float3 ambient = float3(0.03f, 0.03f, 0.03f) * albedo * ao;
