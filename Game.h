@@ -50,6 +50,8 @@ private:
 	SimplePixelShader* pixelShader;
 	SimpleVertexShader* skyBoxVertexShader;
 	SimplePixelShader* skyBoxPixelShader;
+	SimpleVertexShader* pbrVertexShader;
+	SimplePixelShader* pbrPixelShader;
 
 	//Rasterizer and Depth Stuff
 
@@ -62,11 +64,13 @@ private:
 
 	//GameEntities
 	GameEntity* sky;
-	GameEntity* sphere1;
-	GameEntity* sphere2;
-	GameEntity* sphere3;
-	GameEntity* sphere4;
-	GameEntity* sphere5;
+	GameEntity* sphere;
+	GameEntity* spheres[8][8];
+	int numrows = 8;
+	int numcolumns = 8;
+	float spacing = 1.0f;
+	
+
 
 	//Camera
 	Camera* camera;

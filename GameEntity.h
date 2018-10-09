@@ -8,7 +8,7 @@ class GameEntity
 {
 public:
 	GameEntity(Mesh* mesh, Material* material);
-	GameEntity(Mesh* mesh, DirectX::XMFLOAT3 lightColor);
+	GameEntity(Mesh* mesh);
 	~GameEntity(void);
 
 	void UpdateWorldMatrix();

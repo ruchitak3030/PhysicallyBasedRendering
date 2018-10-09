@@ -13,10 +13,9 @@ GameEntity::GameEntity(Mesh* mesh, Material* material)
 	scale = XMFLOAT3(1, 1, 1);
 }
 
-GameEntity::GameEntity(Mesh* mesh, DirectX::XMFLOAT3 lightColor)
+GameEntity::GameEntity(Mesh* mesh)
 {
 	this->mesh = mesh;
-	_lightColor = lightColor;
 
 	XMStoreFloat4x4(&worldMatrix, XMMatrixIdentity());
 	position = XMFLOAT3(0, 0, 0);

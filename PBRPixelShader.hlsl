@@ -1,16 +1,16 @@
+
 cbuffer externalData	: register(b0)
 {
 	float3 albedo;
 	float metallic;
 	float roughness;
-	float a0;
+	float ao;
 
 	float3 lightPos;
 	float3 lightColor;
 
 	float3 cameraPos;
 }
-
 struct VertexToPixel
 {
 	float4 position		: SV_POSITION;
@@ -19,6 +19,8 @@ struct VertexToPixel
 	float3 worldPos		: POSITION;
 	float2 uv			: TEXCOORD;
 };
+
+static const float PI = 3.14159235359;
 
 //Normal Distribution Function = approximates the surface's microfacets that are aligned the halfway vector influenced by the surface roughness.
 float DistributionGGX(float3 N, float3 H, float roughness)
@@ -29,7 +31,7 @@ float DistributionGGX(float3 N, float3 H, float roughness)
 	float NdotH2 = NdotH * NdotH;
 
 	float num = a2;
-	float denom = (NdotH2 * (d1 - 1.0f) + 1.0f);
+	float denom = (NdotH2 * (a2 - 1.0f) + 1.0f);
 	denom = PI * denom * denom;
 
 	return num / denom;
@@ -64,42 +66,13 @@ float3 FresnelSchlick(float cosTheta, float3 F0)
 	return F0 + (1.0 - F0) * pow((1 - cosTheta), 5.0);
 }
 
-//void CalculateRadiance(VertexToPixel input, float3 viewDir, float3 normal, float3 lightPos, float3 lightColor, float3 F0, out float3 radiance)
-//{
-//	static const float PI = 3.14159265359;
-//
-//	//Light Radiance
-//	float3 L = normalize(lightPos - input.worldPos);
-//	float3 H = normalize(viewDir + L);
-//	float dist = length(lightPos - input.worldPos);
-//	float attenuation = 1.0f / (distance * distance);
-//	float3 radiance = lightColor * attenuation;
-//
-//	//BRDF Calculation
-//	float D = NDFGGXTR(normal, H, alpha);
-//	float G = GSmith(normal, viewDir, lightDir, alpha);
-//	float F = FSchlick(max(dot(h, viewDir)0.0f), F0);
-//
-//	float3 Ks = F;
-//	float3 Kd = float3(1.0f, 1.0f, 1.0f) - Ks;
-//	Kd *= 1.0 - metallic;
-//
-//	float3 numerator = D * G * F;
-//	float denominator = 4 * max(dot(normal, viewDir), 0.0f) * max(dot(normal, lightDir), 0.0f);
-//	float3 specular = numerator / denominator;
-//
-//	float NdotL = max(dot(normal, lightDir), 0.0f);
-//	radiance = ((Kd * albedo / PI) + specular) * Li * NDotL;
-//}
-
 float4 main(VertexToPixel input) : SV_TARGET
 {
-	const float PI = 3.14159235359;
 
 	float3 N = normalize(input.normal);
-	float3 V = normalize(camPos - input.worldPos);
+	float3 V = normalize(cameraPos - input.worldPos);
 
-	float3 F0 = float3(0.04);
+	float3 F0 = float3(0.04f, 0.04f, 0.04f);
 	F0 = lerp(F0, albedo, metallic);
 
 	//Reflectance equation
@@ -118,12 +91,6 @@ float4 main(VertexToPixel input) : SV_TARGET
 	float G = GeometrySmith(N, V, L, roughness);
 	float3 F = FresnelSchlick(max(dot(H, V), 0.0f), F0);
 
-
-	float3 numerator = NDF * G * F;
-	float denominator = 4.0f * max(dot(N, V), 0.0f) * max(dot(N, L), 0.0f);
-	float3 specular = numerator / max(denominator, 0.001f);
-
-
 	//Energy of light that gets reflected
 	float3 kS = F;
 
@@ -132,16 +99,21 @@ float4 main(VertexToPixel input) : SV_TARGET
 
 	kD *= 1.0f - metallic;
 
+	float3 numerator = NDF * G * F;
+	float denominator = 4.0f * max(dot(N, V), 0.0f) * max(dot(N, L), 0.0f);
+	float3 specular = numerator / max(denominator, 0.001f);
+
 	//Each light's outgoing reflectance value
 	float NdotL = max(dot(N, L), 0.0f);
-	L0 += ((kD * albedo) / (PI + specular)) * radiance * NdotL;
+	L0 += (((kD * albedo / PI) + specular) * radiance * NdotL);
 
 	//final direct lighting result
-	float3 ambient = float3(0.03f, 0.03f, 0.03f) * albedo * a0;
+	float3 ambient = float3(0.03f, 0.03f, 0.03f) * albedo * ao;
 	float3 color = ambient + L0;
 
 	color = color / (color + float3(1.0f, 1.0f, 1.0f));
-	color = pow(color, float3(1.0f, 2.2f));
+	color = pow(color, float3(1.0f /2.2f, 1.0f / 2.2f, 1.0f / 2.2f));
 
 	return float4(color, 1.0f);
 }
+

@@ -28,14 +28,10 @@ VertexToPixel main( VertexShaderInput input)
 	VertexToPixel output;
 
 	matrix worldViewProj = mul(mul(world, view), projection);
+
 	output.position = mul(float4(input.position, 1.0f), worldViewProj);
-
 	output.normal = mul(input.normal, (float3x3)world);
-	output.tangent = mul(input.tangent, (float3x3)world);
-
 	output.worldPos = mul(float4(input.position, 1.0f), world).xyz;
-
-	output.uv = input.uv;
 
 	return output;
 }
