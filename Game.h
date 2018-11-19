@@ -66,7 +66,6 @@ private:
 
 	//GameEntities
 	GameEntity* sky;
-	GameEntity* sphere;
 	GameEntity* spheres[8][8];
 	int numrows = 8;
 	int numcolumns = 8;
@@ -78,15 +77,15 @@ private:
 	Camera* camera;
 
 	//Textures
-	ID3D11ShaderResourceView* sphereAlbedoMapSRV;
-	ID3D11ShaderResourceView* sphereNormalMapSRV;
-	ID3D11ShaderResourceView* sphereMetallicMapSRV;
-	ID3D11ShaderResourceView* sphereRoughnessMapSRV;
+	ID3D11ShaderResourceView* ironrustAlbedoMapSRV;
+	ID3D11ShaderResourceView* ironrustNormalMapSRV;
+	ID3D11ShaderResourceView* ironrustMetallicMapSRV;
+	ID3D11ShaderResourceView* ironrustRoughnessMapSRV;
 
 	ID3D11SamplerState* sampler;
 
 	//Materials
-	Material* sphereMaterial;
+	Material* ironrustMat;
 
 
 	// Keeps track of the old mouse position.  Useful for 

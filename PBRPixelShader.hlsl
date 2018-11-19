@@ -7,9 +7,6 @@ SamplerState basicSampler			: register(s0);
 
 cbuffer externalData	: register(b0)
 {
-	//float3 albedo;
-	//float metallic;
-	//float roughness;
 	float ao;
 
 	float3 lightPosition1;

@@ -22,7 +22,7 @@ public:
 
 	Mesh* GetMesh() { return mesh; }
 	DirectX::XMFLOAT4X4 GetWorldMatrix() { return worldMatrix; }
-	Material* GetMaterial() { return _material; }
+	Material* GetMaterial();
 
 	DirectX::XMFLOAT3 GetLightColor();
 	DirectX::XMFLOAT3 GetPosition();

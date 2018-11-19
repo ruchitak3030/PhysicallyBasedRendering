@@ -38,8 +38,10 @@ Game::Game(HINSTANCE hInstance)
 Game::~Game()
 {
 
-	if (vertexBuffer)vertexBuffer->Release();
-	if (indexBuffer)indexBuffer->Release();
+	if (vertexBuffer) 
+		vertexBuffer->Release();
+	if (indexBuffer)
+		indexBuffer->Release();
 
 	delete camera;
 
@@ -54,11 +56,10 @@ Game::~Game()
 	delete sphereMesh;
 	delete skyMesh;
 
-	delete sphereMaterial;
+	delete ironrustMat;
 	
 	delete sky;
 
-	delete sphere;
 	for (size_t i = 0; i < numrows; i++)
 		for (size_t j = 0; j < numcolumns; j++)
 		{
@@ -67,10 +68,10 @@ Game::~Game()
 	
 
 	sampler->Release();
-	sphereAlbedoMapSRV->Release();
-	sphereNormalMapSRV->Release();
-	sphereMetallicMapSRV->Release();
-	sphereRoughnessMapSRV->Release();
+	ironrustAlbedoMapSRV->Release();
+	ironrustNormalMapSRV->Release();
+	ironrustMetallicMapSRV->Release();
+	ironrustRoughnessMapSRV->Release();
 	
 	skyTextureSRV->Release();
 	skyIrradianceMapSRV->Release();
@@ -166,10 +167,10 @@ void Game::LoadMesh()
 
 void Game::LoadTextures()
 {
-	CreateWICTextureFromFile(device, context, L"Debug/Textures/iron-rusted4-basecolor.png", 0, &sphereAlbedoMapSRV);
-	CreateWICTextureFromFile(device, context, L"Debug/Textures/iron-rusted4-normal.png", 0, &sphereNormalMapSRV);
-	CreateWICTextureFromFile(device, context, L"Debug/Textures/iron-rusted4-metalness.png", 0, &sphereMetallicMapSRV);
-	CreateWICTextureFromFile(device, context, L"Debug/Textures/iron-rusted4-roughness.png", 0, &sphereRoughnessMapSRV);
+	CreateWICTextureFromFile(device, context, L"Debug/Textures/iron-rusted4-basecolor.png", 0, &ironrustAlbedoMapSRV);
+	CreateWICTextureFromFile(device, context, L"Debug/Textures/iron-rusted4-normal.png", 0, &ironrustNormalMapSRV);
+	CreateWICTextureFromFile(device, context, L"Debug/Textures/iron-rusted4-metalness.png", 0, &ironrustMetallicMapSRV);
+	CreateWICTextureFromFile(device, context, L"Debug/Textures/iron-rusted4-roughness.png", 0, &ironrustRoughnessMapSRV);
 }
 
 void Game::CreateMaterials()
@@ -185,7 +186,7 @@ void Game::CreateMaterials()
 	device->CreateSamplerState(&samplerDesc, &sampler);
 
 
-	sphereMaterial = new Material(vertexShader, pixelShader, sphereAlbedoMapSRV, sphereNormalMapSRV, sampler);
+	ironrustMat = new Material(ironrustAlbedoMapSRV, ironrustNormalMapSRV, ironrustMetallicMapSRV, ironrustRoughnessMapSRV, sampler);
 
 }
 
@@ -195,7 +196,7 @@ void Game::CreateMaterials()
 // --------------------------------------------------------
 void Game::CreateBasicGeometry()
 {
-	sky = new GameEntity(skyMesh, sphereMaterial);
+	sky = new GameEntity(skyMesh);
 	sky->SetScale(1.0f, 1.0f, 1.0f);
 	sky->SetPosition(0.0f, 0.0f, 0.0f);
 
@@ -216,14 +217,14 @@ void Game::CreateBasicGeometry()
 	//sphere5->SetScale(2.0f, 2.0f, 2.0f);
 	//sphere5->SetPosition(-6.0f, -2.0f, 0.0f);
 
-	sphere = new GameEntity(sphereMesh);
+	/*sphere = new GameEntity(sphereMesh, ironrustMat);
 	sphere->SetPosition(0.0, 0.0, 0.0f);
-	sphere->SetScale(1.0f, 1.0f, 1.0f);
+	sphere->SetScale(1.0f, 1.0f, 1.0f);*/
 
 	for (size_t row = 0; row < numrows; ++row)
 		for (size_t col = 0; col < numcolumns; ++col)
 		{
-			spheres[row][col] = new GameEntity(sphereMesh);			
+			spheres[row][col] = new GameEntity(sphereMesh, ironrustMat);			
 		}
 
 	float x = -4.0f;
@@ -277,7 +278,6 @@ void Game::Update(float deltaTime, float totalTime)
 
 	camera->Update(deltaTime);
 
-	sphere->UpdateWorldMatrix();
 	for (size_t row = 0; row < numrows; row++)
 	{
 		for (size_t col = 0; col < numcolumns; col++)
@@ -320,13 +320,13 @@ void Game::Draw(float deltaTime, float totalTime)
 			pbrVertexShader->SetShader();
 
 			pbrPixelShader->SetShaderResourceView("irradianceMap", skyIrradianceMapSRV);
-			pbrPixelShader->SetShaderResourceView("albedoMap", sphereAlbedoMapSRV);
-			pbrPixelShader->SetShaderResourceView("normalMap", sphereNormalMapSRV);
-			pbrPixelShader->SetShaderResourceView("metallicMap", sphereMetallicMapSRV);
-			pbrPixelShader->SetShaderResourceView("roughnessMap", sphereRoughnessMapSRV);
+			pbrPixelShader->SetShaderResourceView("albedoMap", spheres[i][j]->GetMaterial()->GetAlbedoMapSRV());
+			pbrPixelShader->SetShaderResourceView("normalMap", spheres[i][j]->GetMaterial()->GetNormalMapSRV());
+			pbrPixelShader->SetShaderResourceView("metallicMap", spheres[i][j]->GetMaterial()->GetMetallicMapSRV());
+			pbrPixelShader->SetShaderResourceView("roughnessMap", spheres[i][j]->GetMaterial()->GetRoughnessMapSRV());
 			pbrPixelShader->SetSamplerState("basicSampler", sampler);
 
-			//pbrPixelShader->SetFloat3("albedo", XMFLOAT3(0.5f, 0.0f, 0.0f));
+			//pbrPixelShader->SetFloat3("albedo", XMFLOAT3(0.5f, 0.0f, 0.0f));	
 			//pbrPixelShader->SetFloat("metallic", m);
 			//pbrPixelShader->SetFloat("roughness", r);
 			pbrPixelShader->SetFloat("a0", 1.0f);

@@ -39,6 +39,11 @@ void GameEntity::UpdateWorldMatrix()
 	XMStoreFloat4x4(&worldMatrix, XMMatrixTranspose(total));
 }
 
+Material * GameEntity::GetMaterial()
+{
+	return _material;
+}
+
 DirectX::XMFLOAT3 GameEntity::GetLightColor()
 {
 	return _lightColor;
