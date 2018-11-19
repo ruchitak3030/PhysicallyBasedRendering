@@ -67,10 +67,13 @@ Game::~Game()
 	
 
 	sampler->Release();
-	sphereTextureSRV->Release();
+	sphereAlbedoMapSRV->Release();
 	sphereNormalMapSRV->Release();
+	sphereMetallicMapSRV->Release();
+	sphereRoughnessMapSRV->Release();
+	
 	skyTextureSRV->Release();
-
+	skyIrradianceMapSRV->Release();
 	skyRasterizerState->Release();
 	skyDepthState->Release();
 
@@ -138,7 +141,8 @@ void Game::CreateMatrices()
 }
 void Game::LoadSkyBox()
 {
-	HRESULT m = CreateDDSTextureFromFile(device, L"Debug/Textures/Stormy.dds", 0, &skyTextureSRV);
+	CreateDDSTextureFromFile(device, L"Debug/Textures/Stormy.dds", 0, &skyTextureSRV);
+	CreateDDSTextureFromFile(device, L"Debug/Textures/skybox1IR.dds", 0, &skyIrradianceMapSRV);
 
 	//Sky Box Setup
 	D3D11_RASTERIZER_DESC rasterizerDesc = {};
@@ -162,8 +166,10 @@ void Game::LoadMesh()
 
 void Game::LoadTextures()
 {
-	CreateWICTextureFromFile(device, context, L"Debug/Textures/sphere.tif", 0, &sphereTextureSRV);
-	CreateWICTextureFromFile(device, context, L"Debug/Textures/sphereNormal.tif", 0, &sphereNormalMapSRV);
+	CreateWICTextureFromFile(device, context, L"Debug/Textures/iron-rusted4-basecolor.png", 0, &sphereAlbedoMapSRV);
+	CreateWICTextureFromFile(device, context, L"Debug/Textures/iron-rusted4-normal.png", 0, &sphereNormalMapSRV);
+	CreateWICTextureFromFile(device, context, L"Debug/Textures/iron-rusted4-metalness.png", 0, &sphereMetallicMapSRV);
+	CreateWICTextureFromFile(device, context, L"Debug/Textures/iron-rusted4-roughness.png", 0, &sphereRoughnessMapSRV);
 }
 
 void Game::CreateMaterials()
@@ -179,7 +185,7 @@ void Game::CreateMaterials()
 	device->CreateSamplerState(&samplerDesc, &sampler);
 
 
-	sphereMaterial = new Material(vertexShader, pixelShader, sphereTextureSRV, sphereNormalMapSRV, sampler);
+	sphereMaterial = new Material(vertexShader, pixelShader, sphereAlbedoMapSRV, sphereNormalMapSRV, sampler);
 
 }
 
@@ -313,9 +319,16 @@ void Game::Draw(float deltaTime, float totalTime)
 			pbrVertexShader->CopyAllBufferData();
 			pbrVertexShader->SetShader();
 
-			pbrPixelShader->SetFloat3("albedo", XMFLOAT3(0.5f, 0.0f, 0.0f));
-			pbrPixelShader->SetFloat("metallic", m);
-			pbrPixelShader->SetFloat("roughness", r);
+			pbrPixelShader->SetShaderResourceView("irradianceMap", skyIrradianceMapSRV);
+			pbrPixelShader->SetShaderResourceView("albedoMap", sphereAlbedoMapSRV);
+			pbrPixelShader->SetShaderResourceView("normalMap", sphereNormalMapSRV);
+			pbrPixelShader->SetShaderResourceView("metallicMap", sphereMetallicMapSRV);
+			pbrPixelShader->SetShaderResourceView("roughnessMap", sphereRoughnessMapSRV);
+			pbrPixelShader->SetSamplerState("basicSampler", sampler);
+
+			//pbrPixelShader->SetFloat3("albedo", XMFLOAT3(0.5f, 0.0f, 0.0f));
+			//pbrPixelShader->SetFloat("metallic", m);
+			//pbrPixelShader->SetFloat("roughness", r);
 			pbrPixelShader->SetFloat("a0", 1.0f);
 
 			pbrPixelShader->SetFloat3("lightPosition1", XMFLOAT3(10.0f, 10.0f, -10.0f));

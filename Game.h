@@ -53,10 +53,12 @@ private:
 	SimpleVertexShader* pbrVertexShader;
 	SimplePixelShader* pbrPixelShader;
 
-	//Rasterizer and Depth Stuff
-
+	//Skybox Stuff
+	ID3D11ShaderResourceView* skyTextureSRV;
 	ID3D11RasterizerState* skyRasterizerState;
 	ID3D11DepthStencilState* skyDepthState;
+
+	ID3D11ShaderResourceView* skyIrradianceMapSRV;
 
 	//Mesh
 	Mesh* sphereMesh;
@@ -76,9 +78,11 @@ private:
 	Camera* camera;
 
 	//Textures
-	ID3D11ShaderResourceView* sphereTextureSRV;
+	ID3D11ShaderResourceView* sphereAlbedoMapSRV;
 	ID3D11ShaderResourceView* sphereNormalMapSRV;
-	ID3D11ShaderResourceView* skyTextureSRV;
+	ID3D11ShaderResourceView* sphereMetallicMapSRV;
+	ID3D11ShaderResourceView* sphereRoughnessMapSRV;
+
 	ID3D11SamplerState* sampler;
 
 	//Materials
