@@ -41,6 +41,7 @@ private:
 	void LoadTextures();
 	void CreateMaterials();
 	void CreateBasicGeometry();	
+	void SetUpImageBasedLighting();
 
 	ID3D11Buffer* vertexBuffer;
 	ID3D11Buffer* indexBuffer;
@@ -52,6 +53,7 @@ private:
 	SimplePixelShader* skyBoxPixelShader;
 	SimpleVertexShader* pbrVertexShader;
 	SimplePixelShader* pbrPixelShader;
+	SimplePixelShader* convolutionPixelShader;
 
 	//Skybox Stuff
 	ID3D11ShaderResourceView* skyTextureSRV;
@@ -59,6 +61,11 @@ private:
 	ID3D11DepthStencilState* skyDepthState;
 
 	ID3D11ShaderResourceView* skyIrradianceMapSRV;
+
+	//Iamge Based Lighting Stuff
+	ID3D11Texture2D* skyIBLTexture;
+	ID3D11RenderTargetView* skyIBLRTV[6];
+	ID3D11ShaderResourceView* skyIBLSRV;
 
 	//Mesh
 	Mesh* sphereMesh;

@@ -1,0 +1,5 @@
+﻿  compilation object save succeeded; see C:\Users\Ruchita Kondvilkar\Desktop\PhysicallyBasedRendering\Debug\PBRMaterialPixelShader.cso
+C:\Users\Ruchita Kondvilkar\Desktop\PhysicallyBasedRendering\PBRMaterialVertexShader.hlsl(20,17-24): error X4502: invalid vs_2_0 output semantic 'NORMAL'
+C:\Users\Ruchita Kondvilkar\Desktop\PhysicallyBasedRendering\PBRMaterialVertexShader.hlsl(21,18-26): error X4502: invalid vs_2_0 output semantic 'TANGENT'
+  
+  compilation failed; no code produced

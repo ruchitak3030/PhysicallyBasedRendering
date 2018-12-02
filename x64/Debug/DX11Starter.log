@@ -1,0 +1,5 @@
+﻿  compilation object save succeeded; see C:\Users\Ruchita Kondvilkar\Desktop\PhysicallyBasedRendering\x64\Debug\PBRPixelShader.cso
+  Game.cpp
+c:\users\ruchita kondvilkar\desktop\physicallybasedrendering\simpleshader.h(102): warning C4267: 'return': conversion from 'size_t' to 'unsigned int', possible loss of data
+c:\users\ruchita kondvilkar\desktop\physicallybasedrendering\simpleshader.h(106): warning C4267: 'return': conversion from 'size_t' to 'unsigned int', possible loss of data
+  DX11Starter.vcxproj -> C:\Users\Ruchita Kondvilkar\Desktop\PhysicallyBasedRendering\x64\Debug\PhysicallyBasedRendering.exe

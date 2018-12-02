@@ -52,6 +52,7 @@ Game::~Game()
 	delete skyBoxPixelShader;
 	delete pbrVertexShader;
 	delete pbrPixelShader;
+	delete convolutionPixelShader;
 
 	delete sphereMesh;
 	delete skyMesh;
@@ -79,6 +80,14 @@ Game::~Game()
 	skyDepthState->Release();
 
 
+	skyIBLTexture->Release();
+	for (int i = 0; i < 6; i++)
+	{
+		skyIBLRTV[i]->Release();
+	}
+	skyIBLSRV->Release();
+
+
 }
 
 void Game::Init()
@@ -93,6 +102,8 @@ void Game::Init()
 	CreateBasicGeometry();
 
 	context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	SetUpImageBasedLighting();
 }
 
 
@@ -122,6 +133,10 @@ void Game::LoadShaders()
 	if (!pbrPixelShader->LoadShaderFile(L"Debug/PBRPixelShader.cso"))
 		pbrPixelShader->LoadShaderFile(L"PBRPixelShader.cso");
 
+	convolutionPixelShader = new SimplePixelShader(device, context);
+	if (!convolutionPixelShader->LoadShaderFile(L"Debug/ConvolutionPixelShader.cso"))
+		convolutionPixelShader->LoadShaderFile(L"ConvolutionPixelShader.cso");
+
 	
 }
 
@@ -142,7 +157,7 @@ void Game::CreateMatrices()
 }
 void Game::LoadSkyBox()
 {
-	CreateDDSTextureFromFile(device, L"Debug/Textures/Stormy.dds", 0, &skyTextureSRV);
+	CreateDDSTextureFromFile(device, L"Debug/Textures/SunnyCubeMap.dds", 0, &skyTextureSRV);
 	CreateDDSTextureFromFile(device, L"Debug/Textures/skybox1IR.dds", 0, &skyIrradianceMapSRV);
 
 	//Sky Box Setup
@@ -167,10 +182,10 @@ void Game::LoadMesh()
 
 void Game::LoadTextures()
 {
-	CreateWICTextureFromFile(device, context, L"Debug/Textures/iron-rusted4-basecolor.png", 0, &ironrustAlbedoMapSRV);
-	CreateWICTextureFromFile(device, context, L"Debug/Textures/iron-rusted4-normal.png", 0, &ironrustNormalMapSRV);
-	CreateWICTextureFromFile(device, context, L"Debug/Textures/iron-rusted4-metalness.png", 0, &ironrustMetallicMapSRV);
-	CreateWICTextureFromFile(device, context, L"Debug/Textures/iron-rusted4-roughness.png", 0, &ironrustRoughnessMapSRV);
+	CreateWICTextureFromFile(device, context, L"Debug/Textures/golden_albedo.tif", 0, &ironrustAlbedoMapSRV);
+	CreateWICTextureFromFile(device, context, L"Debug/Textures/golden_normal.tif", 0, &ironrustNormalMapSRV);
+	CreateWICTextureFromFile(device, context, L"Debug/Textures/golden_metallic.tif", 0, &ironrustMetallicMapSRV);
+	CreateWICTextureFromFile(device, context, L"Debug/Textures/golden_roughness.tif", 0, &ironrustRoughnessMapSRV);
 }
 
 void Game::CreateMaterials()
@@ -200,27 +215,6 @@ void Game::CreateBasicGeometry()
 	sky->SetScale(1.0f, 1.0f, 1.0f);
 	sky->SetPosition(0.0f, 0.0f, 0.0f);
 
-
-	//sphere1 = new GameEntity(sphereMesh);
-	//sphere1->SetScale(2.0f, 2.0f, 2.0f);
-	//sphere1->SetPosition(6.0f, -2.0f, 0.0f);
-	//sphere2 = new GameEntity(sphereMesh);
-	//sphere2->SetScale(2.0f, 2.0f, 2.0f);
-	//sphere2->SetPosition(3.0f, -2.0f, 0.0f);
-	//sphere3 = new GameEntity(sphereMesh);
-	//sphere3->SetScale(2.0f, 2.0f, 2.0f);
-	//sphere3->SetPosition(0.0f, -2.0f, 0.0f);
-	//sphere4 = new GameEntity(sphereMesh);
-	//sphere4->SetScale(2.0f, 2.0f, 2.0f);
-	//sphere4->SetPosition(-3.0f, -2.0f, 0.0f);
-	//sphere5 = new GameEntity(sphereMesh);
-	//sphere5->SetScale(2.0f, 2.0f, 2.0f);
-	//sphere5->SetPosition(-6.0f, -2.0f, 0.0f);
-
-	/*sphere = new GameEntity(sphereMesh, ironrustMat);
-	sphere->SetPosition(0.0, 0.0, 0.0f);
-	sphere->SetScale(1.0f, 1.0f, 1.0f);*/
-
 	for (size_t row = 0; row < numrows; ++row)
 		for (size_t col = 0; col < numcolumns; ++col)
 		{
@@ -247,6 +241,115 @@ void Game::CreateBasicGeometry()
 
 
 	
+}
+
+void Game::SetUpImageBasedLighting()
+{
+	XMFLOAT3 position = XMFLOAT3(0, 0, 0);
+	XMFLOAT4X4 viewMatrix;
+	XMFLOAT4X4 projMatrix;
+
+	XMVECTOR tar[] = { XMVectorSet(1,0,0,0), XMVectorSet(-1,0,0,0), XMVectorSet(0,1,0,0), XMVectorSet(0,-1,0,0), XMVectorSet(0,1,0,0), XMVectorSet(0,-1,0,0) };
+	XMVECTOR up[] = { XMVectorSet(0,1,0,0), XMVectorSet(0,1,0,0), XMVectorSet(0,0,-1,0), XMVectorSet(0,0,1,0), XMVectorSet(0,1,0,0), XMVectorSet(0,1,0,0) };
+
+	UINT stride = sizeof(Vertex);
+	UINT offset = 0;
+
+	const float color[4] = { 0.6f, 0.6f, 0.6f, 0.0f };
+
+
+	//Texture
+	D3D11_TEXTURE2D_DESC skyIBLDesc = {};
+	skyIBLDesc.Width = 64;
+	skyIBLDesc.Height = 64;
+	skyIBLDesc.MipLevels = 1;
+	skyIBLDesc.ArraySize = 6;
+	skyIBLDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
+	skyIBLDesc.Usage = D3D11_USAGE_DEFAULT;
+	skyIBLDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+	skyIBLDesc.CPUAccessFlags = 0;
+	skyIBLDesc.MiscFlags = D3D11_RESOURCE_MISC_TEXTURECUBE | D3D11_RESOURCE_MISC_GENERATE_MIPS;
+	skyIBLDesc.SampleDesc.Count = 1;
+	skyIBLDesc.SampleDesc.Quality = 0;
+
+	device->CreateTexture2D(&skyIBLDesc, 0, &skyIBLTexture);
+
+
+	//Render Target View
+	D3D11_RENDER_TARGET_VIEW_DESC skyIBLRTVDesc;
+	ZeroMemory(&skyIBLRTVDesc, sizeof(skyIBLRTVDesc));
+	skyIBLRTVDesc.Format = skyIBLDesc.Format;
+	skyIBLRTVDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2DARRAY;
+	skyIBLRTVDesc.Texture2DArray.ArraySize = 1;
+	skyIBLRTVDesc.Texture2DArray.MipSlice = 0;
+	
+	for (int i = 0; i < 6; i++)
+	{
+		skyIBLRTVDesc.Texture2DArray.FirstArraySlice = i;
+		device->CreateRenderTargetView(skyIBLTexture, &skyIBLRTVDesc, &skyIBLRTV[i]);
+	}
+
+
+	//Shader Resource Viee
+	D3D11_SHADER_RESOURCE_VIEW_DESC skyIBLSRVDesc;
+	ZeroMemory(&skyIBLSRVDesc, sizeof(skyIBLSRVDesc));
+	skyIBLSRVDesc.Format = skyIBLDesc.Format;
+	skyIBLSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBE;
+	skyIBLSRVDesc.TextureCube.MostDetailedMip = 0;
+	skyIBLSRVDesc.TextureCube.MipLevels = 1;
+
+	device->CreateShaderResourceView(skyIBLTexture, &skyIBLSRVDesc, &skyIBLSRV);
+
+	D3D11_VIEWPORT skyIBLViewport;
+	skyIBLViewport.Width = 64;
+	skyIBLViewport.Height = 64;
+	skyIBLViewport.MinDepth = 0.0f;
+	skyIBLViewport.MaxDepth = 1.0f;
+	skyIBLViewport.TopLeftX = 0.0f;
+	skyIBLViewport.TopLeftY = 0.0f;
+
+
+
+	for (int i = 0; i < 6; i++)
+	{
+		XMVECTOR dir = XMVector3Rotate(tar[i], XMQuaternionIdentity());
+		XMMATRIX view = DirectX::XMMatrixLookToLH(XMLoadFloat3(&position), dir, up[i]);
+		XMStoreFloat4x4(&viewMatrix, DirectX::XMMatrixTranspose(view));
+
+		XMMATRIX P = DirectX::XMMatrixPerspectiveFovLH(0.5f * XM_PI, 1.0f, 0.1f, 100.0f);
+		XMStoreFloat4x4(&projMatrix, DirectX::XMMatrixTranspose(P));
+
+		context->OMSetRenderTargets(1, &skyIBLRTV[i], 0);
+		context->RSSetViewports(1, &skyIBLViewport);
+		context->ClearRenderTargetView(skyIBLRTV[i], color);
+
+		vertexBuffer = skyMesh->GetVertexBuffer();
+		indexBuffer = skyMesh->GetIndexBuffer();
+
+		skyBoxVertexShader->SetMatrix4x4("view", viewMatrix);
+		skyBoxVertexShader->SetMatrix4x4("projection", projMatrix);
+
+		skyBoxVertexShader->CopyAllBufferData();
+		skyBoxVertexShader->SetShader();
+
+		convolutionPixelShader->SetShaderResourceView("Sky", skyTextureSRV);
+		convolutionPixelShader->SetSamplerState("basicSampler", sampler);
+
+		convolutionPixelShader->CopyAllBufferData();
+		convolutionPixelShader->SetShader();
+
+		context->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);
+		context->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);
+
+		context->RSSetState(skyRasterizerState);
+		context->OMSetDepthStencilState(skyDepthState, 0);
+
+		context->DrawIndexed(skyMesh->GetIndexCount(), 0, 0);
+
+		//Reset the render states we've changed
+		context->RSSetState(0);
+		context->OMSetDepthStencilState(0, 0);	
+	}
 }
 
 
@@ -296,12 +399,15 @@ void Game::Draw(float deltaTime, float totalTime)
 {
 	const float color[4] = { 0.1f, 0.1f, 0.1f, 1.0f};
 
+	context->OMSetRenderTargets(1, &backBufferRTV, depthStencilView);
+	context->RSSetViewports(1, &viewport);
 	context->ClearRenderTargetView(backBufferRTV, color);
 	context->ClearDepthStencilView(
-		depthStencilView, 
+		depthStencilView,
 		D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL,
 		1.0f,
 		0);
+
 	UINT stride = sizeof(Vertex);
 	UINT offset = 0;
 
@@ -326,9 +432,6 @@ void Game::Draw(float deltaTime, float totalTime)
 			pbrPixelShader->SetShaderResourceView("roughnessMap", spheres[i][j]->GetMaterial()->GetRoughnessMapSRV());
 			pbrPixelShader->SetSamplerState("basicSampler", sampler);
 
-			//pbrPixelShader->SetFloat3("albedo", XMFLOAT3(0.5f, 0.0f, 0.0f));	
-			//pbrPixelShader->SetFloat("metallic", m);
-			//pbrPixelShader->SetFloat("roughness", r);
 			pbrPixelShader->SetFloat("a0", 1.0f);
 
 			pbrPixelShader->SetFloat3("lightPosition1", XMFLOAT3(10.0f, 10.0f, -10.0f));

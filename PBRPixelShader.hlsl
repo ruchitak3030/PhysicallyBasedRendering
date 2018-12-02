@@ -3,7 +3,7 @@ Texture2D albedoMap				: register(t1);
 Texture2D normalMap				: register(t2);
 Texture2D metallicMap			: register(t3);
 Texture2D roughnessMap			: register(t4);
-SamplerState basicSampler			: register(s0);
+SamplerState basicSampler		: register(s0);
 
 cbuffer externalData	: register(b0)
 {
@@ -161,7 +161,12 @@ float4 main(VertexToPixel input) : SV_TARGET
 
 
 	//Direct lighting
-	float3 ambient = float3(0.03f, 0.03f, 0.03f) * albedo * ao;
+	float3 irradiance = irradianceMap.Sample(basicSampler, normalVec).rgb;
+	float3 kS = FresnelSchlickRoughness(max(dot(normalVec, viewDir), 0.0f), F0, roughness);
+	float3 kD = float3(1.0f, 1.0f, 1.0f) - kS;
+	float3 diffuse = albedo * irradiance;
+	float3 ambient = (kD * diffuse) * ao;
+
 	float3 color = ambient + L0;
 
 
