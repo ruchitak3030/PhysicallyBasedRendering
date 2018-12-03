@@ -24,6 +24,9 @@ Game::Game(HINSTANCE hInstance)
 	skyBoxPixelShader = 0;
 	pbrVertexShader = 0;
 	pbrPixelShader = 0;
+	convolutionPixelShader = 0;
+	pbrMaterialVertexShader = 0;
+	pbrMaterialPixelShader = 0;
 
 	
 
@@ -53,6 +56,8 @@ Game::~Game()
 	delete pbrVertexShader;
 	delete pbrPixelShader;
 	delete convolutionPixelShader;
+	delete pbrMaterialVertexShader;
+	delete pbrMaterialPixelShader;
 
 	delete sphereMesh;
 	delete skyMesh;
@@ -137,6 +142,17 @@ void Game::LoadShaders()
 	if (!convolutionPixelShader->LoadShaderFile(L"Debug/ConvolutionPixelShader.cso"))
 		convolutionPixelShader->LoadShaderFile(L"ConvolutionPixelShader.cso");
 
+	pbrMaterialVertexShader = new SimpleVertexShader(device, context);
+	if (!pbrMaterialVertexShader->LoadShaderFile(L"Debug/PBRMaterialVertexShader.cso"))
+		pbrMaterialVertexShader->LoadShaderFile(L"PBRMaterialVertexShader.cso");
+
+	pbrMaterialPixelShader = new SimplePixelShader(device, context);
+	if (!pbrMaterialPixelShader->LoadShaderFile(L"Debug/PBRMaterialPixelShader.cso"))
+		pbrMaterialPixelShader->LoadShaderFile(L"PBRMaterialPixelShader.cso");
+
+
+
+
 	
 }
 
@@ -218,7 +234,7 @@ void Game::CreateBasicGeometry()
 	for (size_t row = 0; row < numrows; ++row)
 		for (size_t col = 0; col < numcolumns; ++col)
 		{
-			spheres[row][col] = new GameEntity(sphereMesh, ironrustMat);			
+			spheres[row][col] = new GameEntity(sphereMesh);			
 		}
 
 	float x = -4.0f;
@@ -411,6 +427,7 @@ void Game::Draw(float deltaTime, float totalTime)
 	UINT stride = sizeof(Vertex);
 	UINT offset = 0;
 
+	//Direct Lighting without textures
 	//Light Position
 	float r = 0.0f;
 	for (size_t i = 0; i < numrows; i++)
@@ -425,13 +442,9 @@ void Game::Draw(float deltaTime, float totalTime)
 			pbrVertexShader->CopyAllBufferData();
 			pbrVertexShader->SetShader();
 
-			pbrPixelShader->SetShaderResourceView("irradianceMap", skyIrradianceMapSRV);
-			pbrPixelShader->SetShaderResourceView("albedoMap", spheres[i][j]->GetMaterial()->GetAlbedoMapSRV());
-			pbrPixelShader->SetShaderResourceView("normalMap", spheres[i][j]->GetMaterial()->GetNormalMapSRV());
-			pbrPixelShader->SetShaderResourceView("metallicMap", spheres[i][j]->GetMaterial()->GetMetallicMapSRV());
-			pbrPixelShader->SetShaderResourceView("roughnessMap", spheres[i][j]->GetMaterial()->GetRoughnessMapSRV());
-			pbrPixelShader->SetSamplerState("basicSampler", sampler);
-
+			pbrPixelShader->SetFloat3("albedo", XMFLOAT3(0.85f, 0.74f, 0.60f));
+			pbrPixelShader->SetFloat("metallic", m);
+			pbrPixelShader->SetFloat("roughness", r);
 			pbrPixelShader->SetFloat("a0", 1.0f);
 
 			pbrPixelShader->SetFloat3("lightPosition1", XMFLOAT3(10.0f, 10.0f, -10.0f));
@@ -458,7 +471,58 @@ void Game::Draw(float deltaTime, float totalTime)
 
 		r += 0.10f;
 	}
+
+	//IBL with textures
+	////Light Position
+	//float r = 0.0f;
+	//for (size_t i = 0; i < numrows; i++)
+	//{
+	//	float m = 0.0f;
+	//	for (size_t j = 0; j < numcolumns; j++)
+	//	{
+	//		pbrMaterialVertexShader->SetMatrix4x4("world", spheres[i][j]->GetWorldMatrix());
+	//		pbrMaterialVertexShader->SetMatrix4x4("view", camera->GetView());
+	//		pbrMaterialVertexShader->SetMatrix4x4("projection", camera->GetProjection());
+
+	//		pbrMaterialVertexShader->CopyAllBufferData();
+	//		pbrMaterialVertexShader->SetShader();
+
+	//		pbrMaterialPixelShader->SetShaderResourceView("irradianceMap", skyIrradianceMapSRV);
+	//		pbrMaterialPixelShader->SetShaderResourceView("albedoMap", spheres[i][j]->GetMaterial()->GetAlbedoMapSRV());
+	//		pbrMaterialPixelShader->SetShaderResourceView("normalMap", spheres[i][j]->GetMaterial()->GetNormalMapSRV());
+	//		pbrMaterialPixelShader->SetShaderResourceView("metallicMap", spheres[i][j]->GetMaterial()->GetMetallicMapSRV());
+	//		pbrMaterialPixelShader->SetShaderResourceView("roughnessMap", spheres[i][j]->GetMaterial()->GetRoughnessMapSRV());
+	//		pbrMaterialPixelShader->SetSamplerState("basicSampler", sampler);
+
+	//		pbrMaterialPixelShader->SetFloat("a0", 1.0f);
+
+	//		pbrMaterialPixelShader->SetFloat3("lightPosition1", XMFLOAT3(10.0f, 10.0f, -10.0f));
+	//		pbrMaterialPixelShader->SetFloat3("lightPosition2", XMFLOAT3(10.0f, -10.0f, -10.0f));
+	//		pbrMaterialPixelShader->SetFloat3("lightPosition3", XMFLOAT3(-10.0f, 10.0f, -10.0f));
+	//		pbrMaterialPixelShader->SetFloat3("lightPosition4", XMFLOAT3(-10.0f, -10.0f, -10.0f));
+	//		pbrMaterialPixelShader->SetFloat3("lightColor", XMFLOAT3(300.0f, 300.0f, 300.0f));
+
+	//		pbrMaterialPixelShader->SetFloat3("cameraPos", camera->GetPosition());
+
+	//		pbrMaterialPixelShader->CopyAllBufferData();
+	//		pbrMaterialPixelShader->SetShader();
+
+
+	//		vertexBuffer = spheres[i][j]->GetMesh()->GetVertexBuffer();
+	//		indexBuffer = spheres[i][j]->GetMesh()->GetIndexBuffer();
+
+	//		context->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);
+	//		context->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);
+
+	//		context->DrawIndexed(spheres[i][j]->GetMesh()->GetIndexCount(), 0, 0);
+	//		m += 0.10f;
+	//	}
+
+	//	r += 0.10f;
+	//}
 	
+
+
 	
 	/******************************************************************************************** /
 	/*DRAW SKYBOX*/

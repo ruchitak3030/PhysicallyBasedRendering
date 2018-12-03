@@ -1,5 +1,28 @@
 ﻿  compilation object save succeeded; see C:\Users\Ruchita Kondvilkar\Desktop\PhysicallyBasedRendering\Debug\PBRMaterialPixelShader.cso
-C:\Users\Ruchita Kondvilkar\Desktop\PhysicallyBasedRendering\PBRMaterialVertexShader.hlsl(20,17-24): error X4502: invalid vs_2_0 output semantic 'NORMAL'
-C:\Users\Ruchita Kondvilkar\Desktop\PhysicallyBasedRendering\PBRMaterialVertexShader.hlsl(21,18-26): error X4502: invalid vs_2_0 output semantic 'TANGENT'
-  
-  compilation failed; no code produced
+  compilation object save succeeded; see C:\Users\Ruchita Kondvilkar\Desktop\PhysicallyBasedRendering\Debug\PBRMaterialVertexShader.cso
+  compilation object save succeeded; see C:\Users\Ruchita Kondvilkar\Desktop\PhysicallyBasedRendering\Debug\PBRPixelShader.cso
+  compilation object save succeeded; see C:\Users\Ruchita Kondvilkar\Desktop\PhysicallyBasedRendering\Debug\PBRVertexShader.cso
+  compilation object save succeeded; see C:\Users\Ruchita Kondvilkar\Desktop\PhysicallyBasedRendering\Debug\PixelShader.cso
+  compilation object save succeeded; see C:\Users\Ruchita Kondvilkar\Desktop\PhysicallyBasedRendering\Debug\SkyBoxPixelShader.cso
+  compilation object save succeeded; see C:\Users\Ruchita Kondvilkar\Desktop\PhysicallyBasedRendering\Debug\SkyBoxVertexShader.cso
+  compilation object save succeeded; see C:\Users\Ruchita Kondvilkar\Desktop\PhysicallyBasedRendering\Debug\VertexShader.cso
+  Camera.cpp
+  DXCore.cpp
+  Game.cpp
+c:\users\ruchita kondvilkar\desktop\physicallybasedrendering\game.cpp(69): warning C4018: '<': signed/unsigned mismatch
+c:\users\ruchita kondvilkar\desktop\physicallybasedrendering\game.cpp(70): warning C4018: '<': signed/unsigned mismatch
+c:\users\ruchita kondvilkar\desktop\physicallybasedrendering\game.cpp(234): warning C4018: '<': signed/unsigned mismatch
+c:\users\ruchita kondvilkar\desktop\physicallybasedrendering\game.cpp(235): warning C4018: '<': signed/unsigned mismatch
+c:\users\ruchita kondvilkar\desktop\physicallybasedrendering\game.cpp(242): warning C4018: '<': signed/unsigned mismatch
+c:\users\ruchita kondvilkar\desktop\physicallybasedrendering\game.cpp(246): warning C4018: '<': signed/unsigned mismatch
+c:\users\ruchita kondvilkar\desktop\physicallybasedrendering\game.cpp(400): warning C4018: '<': signed/unsigned mismatch
+c:\users\ruchita kondvilkar\desktop\physicallybasedrendering\game.cpp(402): warning C4018: '<': signed/unsigned mismatch
+c:\users\ruchita kondvilkar\desktop\physicallybasedrendering\game.cpp(433): warning C4018: '<': signed/unsigned mismatch
+c:\users\ruchita kondvilkar\desktop\physicallybasedrendering\game.cpp(436): warning C4018: '<': signed/unsigned mismatch
+  GameEntity.cpp
+  Main.cpp
+  Material.cpp
+  Mesh.cpp
+  SimpleShader.cpp
+  Generating Code...
+  DX11Starter.vcxproj -> C:\Users\Ruchita Kondvilkar\Desktop\PhysicallyBasedRendering\Debug\PhysicallyBasedRendering.exe

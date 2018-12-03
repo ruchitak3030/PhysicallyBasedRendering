@@ -54,6 +54,8 @@ private:
 	SimpleVertexShader* pbrVertexShader;
 	SimplePixelShader* pbrPixelShader;
 	SimplePixelShader* convolutionPixelShader;
+	SimpleVertexShader* pbrMaterialVertexShader;
+	SimplePixelShader* pbrMaterialPixelShader;
 
 	//Skybox Stuff
 	ID3D11ShaderResourceView* skyTextureSRV;
