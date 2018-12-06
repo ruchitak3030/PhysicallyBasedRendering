@@ -234,7 +234,7 @@ void Game::CreateBasicGeometry()
 	for (size_t row = 0; row < numrows; ++row)
 		for (size_t col = 0; col < numcolumns; ++col)
 		{
-			spheres[row][col] = new GameEntity(sphereMesh);			
+			spheres[row][col] = new GameEntity(sphereMesh, ironrustMat);			
 		}
 
 	float x = -4.0f;
@@ -424,102 +424,36 @@ void Game::Draw(float deltaTime, float totalTime)
 		1.0f,
 		0);
 
-	UINT stride = sizeof(Vertex);
-	UINT offset = 0;
+	//UINT stride = sizeof(Vertex);
+	//UINT offset = 0;
 
 	//Direct Lighting without textures
-	//Light Position
+	/*float r = 0.0f;
+	for (size_t i = 0; i < numrows; i++)
+	{
+		float m = 0.0f;
+		for (size_t j = 0; j < numcolumns; j++)
+		{
+			render.RenderPBR(vertexBuffer, indexBuffer, pbrVertexShader, pbrPixelShader, spheres[i][j], camera, m, r, context);			
+			m += 0.10f;
+		}
+
+		r += 0.10f;
+	}*/
+
+	//IBL with textures
 	float r = 0.0f;
 	for (size_t i = 0; i < numrows; i++)
 	{
 		float m = 0.0f;
 		for (size_t j = 0; j < numcolumns; j++)
 		{
-			pbrVertexShader->SetMatrix4x4("world", spheres[i][j]->GetWorldMatrix());
-			pbrVertexShader->SetMatrix4x4("view", camera->GetView());
-			pbrVertexShader->SetMatrix4x4("projection", camera->GetProjection());
-
-			pbrVertexShader->CopyAllBufferData();
-			pbrVertexShader->SetShader();
-
-			pbrPixelShader->SetFloat3("albedo", XMFLOAT3(0.85f, 0.74f, 0.60f));
-			pbrPixelShader->SetFloat("metallic", m);
-			pbrPixelShader->SetFloat("roughness", r);
-			pbrPixelShader->SetFloat("a0", 1.0f);
-
-			pbrPixelShader->SetFloat3("lightPosition1", XMFLOAT3(10.0f, 10.0f, -10.0f));
-			pbrPixelShader->SetFloat3("lightPosition2", XMFLOAT3(10.0f, -10.0f, -10.0f));
-			pbrPixelShader->SetFloat3("lightPosition3", XMFLOAT3(-10.0f, 10.0f, -10.0f));
-			pbrPixelShader->SetFloat3("lightPosition4", XMFLOAT3(-10.0f, -10.0f, -10.0f));
-			pbrPixelShader->SetFloat3("lightColor", XMFLOAT3(300.0f, 300.0f, 300.0f));
-
-			pbrPixelShader->SetFloat3("cameraPos", camera->GetPosition());
-
-			pbrPixelShader->CopyAllBufferData();
-			pbrPixelShader->SetShader();
-
-
-			vertexBuffer = spheres[i][j]->GetMesh()->GetVertexBuffer();
-			indexBuffer = spheres[i][j]->GetMesh()->GetIndexBuffer();
-
-			context->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);
-			context->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);
-
-			context->DrawIndexed(spheres[i][j]->GetMesh()->GetIndexCount(), 0, 0);
+			render.RenderRBRMaterial(vertexBuffer, indexBuffer, pbrMaterialVertexShader, pbrMaterialPixelShader, spheres[i][j], camera, m, r, context, sampler, skyIrradianceMapSRV);
 			m += 0.10f;
 		}
 
 		r += 0.10f;
 	}
-
-	//IBL with textures
-	////Light Position
-	//float r = 0.0f;
-	//for (size_t i = 0; i < numrows; i++)
-	//{
-	//	float m = 0.0f;
-	//	for (size_t j = 0; j < numcolumns; j++)
-	//	{
-	//		pbrMaterialVertexShader->SetMatrix4x4("world", spheres[i][j]->GetWorldMatrix());
-	//		pbrMaterialVertexShader->SetMatrix4x4("view", camera->GetView());
-	//		pbrMaterialVertexShader->SetMatrix4x4("projection", camera->GetProjection());
-
-	//		pbrMaterialVertexShader->CopyAllBufferData();
-	//		pbrMaterialVertexShader->SetShader();
-
-	//		pbrMaterialPixelShader->SetShaderResourceView("irradianceMap", skyIrradianceMapSRV);
-	//		pbrMaterialPixelShader->SetShaderResourceView("albedoMap", spheres[i][j]->GetMaterial()->GetAlbedoMapSRV());
-	//		pbrMaterialPixelShader->SetShaderResourceView("normalMap", spheres[i][j]->GetMaterial()->GetNormalMapSRV());
-	//		pbrMaterialPixelShader->SetShaderResourceView("metallicMap", spheres[i][j]->GetMaterial()->GetMetallicMapSRV());
-	//		pbrMaterialPixelShader->SetShaderResourceView("roughnessMap", spheres[i][j]->GetMaterial()->GetRoughnessMapSRV());
-	//		pbrMaterialPixelShader->SetSamplerState("basicSampler", sampler);
-
-	//		pbrMaterialPixelShader->SetFloat("a0", 1.0f);
-
-	//		pbrMaterialPixelShader->SetFloat3("lightPosition1", XMFLOAT3(10.0f, 10.0f, -10.0f));
-	//		pbrMaterialPixelShader->SetFloat3("lightPosition2", XMFLOAT3(10.0f, -10.0f, -10.0f));
-	//		pbrMaterialPixelShader->SetFloat3("lightPosition3", XMFLOAT3(-10.0f, 10.0f, -10.0f));
-	//		pbrMaterialPixelShader->SetFloat3("lightPosition4", XMFLOAT3(-10.0f, -10.0f, -10.0f));
-	//		pbrMaterialPixelShader->SetFloat3("lightColor", XMFLOAT3(300.0f, 300.0f, 300.0f));
-
-	//		pbrMaterialPixelShader->SetFloat3("cameraPos", camera->GetPosition());
-
-	//		pbrMaterialPixelShader->CopyAllBufferData();
-	//		pbrMaterialPixelShader->SetShader();
-
-
-	//		vertexBuffer = spheres[i][j]->GetMesh()->GetVertexBuffer();
-	//		indexBuffer = spheres[i][j]->GetMesh()->GetIndexBuffer();
-
-	//		context->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);
-	//		context->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);
-
-	//		context->DrawIndexed(spheres[i][j]->GetMesh()->GetIndexCount(), 0, 0);
-	//		m += 0.10f;
-	//	}
-
-	//	r += 0.10f;
-	//}
 	
 
 
@@ -528,33 +462,7 @@ void Game::Draw(float deltaTime, float totalTime)
 	/*DRAW SKYBOX*/
 	/*******************************************************************************************/
 
-	context->HSSetShader(0, 0, 0);
-	context->DSSetShader(0, 0, 0);
-
-	vertexBuffer = sky->GetMesh()->GetVertexBuffer();
-	indexBuffer = sky->GetMesh()->GetIndexBuffer();
-
-	context->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);
-	context->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);
-
-	skyBoxVertexShader->SetMatrix4x4("view", camera->GetView());
-	skyBoxVertexShader->SetMatrix4x4("projection", camera->GetProjection());
-	skyBoxVertexShader->CopyAllBufferData();
-	skyBoxVertexShader->SetShader();
-
-
-	skyBoxPixelShader->SetShaderResourceView("Sky", skyTextureSRV);
-	skyBoxPixelShader->CopyAllBufferData();
-	skyBoxPixelShader->SetShader();
-
-
-	context->RSSetState(skyRasterizerState);
-	context->OMSetDepthStencilState(skyDepthState, 0);
-
-	context->DrawIndexed(sky->GetMesh()->GetIndexCount(), 0, 0);
-
-	context->RSSetState(0);
-	context->OMSetDepthStencilState(0, 0);
+	render.RenderSkyBox(vertexBuffer, indexBuffer, skyBoxVertexShader, skyBoxPixelShader, skyMesh, camera, context, skyTextureSRV, skyRasterizerState, skyDepthState);
 
 
 	swapChain->Present(0, 0);

@@ -6,6 +6,7 @@
 #include "GameEntity.h"
 #include "Camera.h"
 #include "Material.h"
+#include "Render.h"
 #include <DirectXMath.h>
 
 
@@ -95,6 +96,9 @@ private:
 
 	//Materials
 	Material* ironrustMat;
+
+	//Render 
+	Render render;
 
 
 	// Keeps track of the old mouse position.  Useful for 
